@@ -50,19 +50,115 @@ object List { // `List` companion object. Contains functions for creating and wo
     foldRight(ns, 1.0)(_ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
 
-  def tail[A](l: List[A]): List[A] = sys.error("todo")
+  def tail[A](l: List[A]): List[A] = l match {
+    case Nil => throw new IndexOutOfBoundsException("End of list reached")
+    case Cons(_, t) => t
+  }
 
-  def setHead[A](l: List[A], h: A): List[A] = sys.error("todo")
+  def setHead[A](l: List[A], h: A): List[A] = l match {
+    case Nil => throw new IndexOutOfBoundsException("End of list reached")
+    case Cons(_, t) => Cons(h, t)
+  }
 
-  def drop[A](l: List[A], n: Int): List[A] = sys.error("todo")
+  def drop[A](l: List[A], n: Int): List[A] =
+    if (n <= 0) l
+    else l match {
+      case Nil => throw new IndexOutOfBoundsException("End of list reached")
+      case Cons(_, t) => drop(t, n - 1)
+    }
 
-  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = sys.error("todo")
+  @annotation.tailrec
+  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = l match {
+    case Nil => Nil
+    case Cons(h, t) => if (f(h)) dropWhile(t, f) else Cons(h, t)
+  }
 
-  def init[A](l: List[A]): List[A] = sys.error("todo")
+  def init[A](l: List[A]): List[A] = l match {
+    case Nil => throw new IndexOutOfBoundsException("Can not inin on empty list")
+    case Cons(h, Nil) => Nil
+    case Cons(h, t) => Cons(h, init(t))
+  }
 
-  def length[A](l: List[A]): Int = sys.error("todo")
+  def length[A](l: List[A]): Int =
+    foldRight(l, 0)((_, x) => x + 1)
 
-  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = sys.error("todo")
+  @annotation.tailrec
+  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = l match {
+    case Nil => z
+    case Cons(h, t) => foldLeft(t, f(z, h))(f)
+  }
 
-  def map[A,B](l: List[A])(f: A => B): List[B] = sys.error("todo")
+  def sum3(ns: List[Int]) =
+    foldLeft(ns, 0)(_ + _)
+
+  def product3(ns: List[Double]) =
+    foldLeft(ns, 1.0)(_ * _)
+
+  def length2[A](l: List[A]): Int =
+    foldLeft(l, 0)((x, _) => x + 1)
+
+
+  def reverse[A](l : List[A]): List[A] = {
+    @annotation.tailrec
+    def reverseAcc[A](o: List[A], r: List[A]): List[A] = o match {
+      case Nil => r
+      case Cons(h, t) => reverseAcc(t, Cons(h, r))
+    }
+    reverseAcc(l, Nil)
+  }
+
+  def reverse2[A](l: List[A]): List[A] =
+    foldLeft(l, Nil:List[A])((r, h) => Cons(h, r))
+
+  def foldRight2[A,B](as: List[A], z: B)(f: (A, B) => B): B =
+    foldLeft(reverse(as), z)((x, y) => f(y,x))
+
+  def append2[A](a1: List[A], a2: List[A]): List[A] =
+    foldRight2(a1, a2)(Cons(_,_))
+
+  def flatten[A](l: List[List[A]]): List[A] = {
+    def flattenAcc[A](o: List[List[A]], n: List[A]): List[A] = o match {
+      case Nil => n
+      case Cons(h, t) => flattenAcc(t, append2(n, h))
+    }
+    flattenAcc(l, Nil)
+  }
+
+  def flatten2[A](l: List[List[A]]): List[A] =
+    foldRight2(l, Nil:List[A])(append2(_,_))
+
+  def add1(l: List[Int]): List[Int] =
+    foldRight2(l, Nil:List[Int])((x, y) => Cons(x + 1, y))
+
+  def doubleToString(l: List[Double]): List[String] = l match {
+    case Nil => Nil
+    case Cons(h, t) => Cons(h.toString, doubleToString(t))
+  }
+
+  def map[A,B](l: List[A])(f: A => B): List[B] = l match {
+    case Nil => Nil
+    case Cons(h, t) => Cons(f(h), map(t)(f))
+  }
+
+  def map2[A,B](l: List[A])(f: A => B): List[B] = {
+    def mapAcc(l: List[A], acc: List[B]): List[B] = l match {
+      case Nil => acc
+      case Cons(h, t) => mapAcc(t, Cons(f(h), acc))
+    }
+    mapAcc(reverse(l), Nil)
+  }
+
+  def filter[A](l: List[A])(f: A => Boolean): List[A] = l match {
+    case Nil => Nil
+    case Cons(h, t) => if (f(h)) Cons(h, filter(t)(f)) else filter(t)(f)
+  }
+
+  def filter2[A](l: List[A])(f: A => Boolean): List[A] = {
+    @annotation.tailrec
+    def filterAcc[A](o: List[A], n: List[A])(f: A=> Boolean): List[A] = o match {
+      case Nil => n
+      case Cons(h, t) => if (f(h)) filterAcc(t, Cons(h, n))(f) else filterAcc(t, n)(f)
+    }
+    filterAcc(reverse(l), Nil)(f)
+  }
 }
