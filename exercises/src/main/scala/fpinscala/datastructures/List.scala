@@ -161,4 +161,54 @@ object List { // `List` companion object. Contains functions for creating and wo
     }
     filterAcc(reverse(l), Nil)(f)
   }
+
+  def flatMap[A, B](l: List[A])(f: A => List[B]): List[B] = l match {
+    case Nil => Nil
+    case Cons(h, t) => append(f(h), flatMap(t)(f))
+  }
+
+  def flatMap2[A, B](l: List[A])(f: A => List[B]): List[B] = {
+    @annotation.tailrec
+    def flatMapAcc[A, B](o: List[A], n: List[B])(f: A => List[B]): List[B] = o match {
+      case Nil => n
+      case Cons(h, t) => flatMapAcc(t, append(f(h), n))(f)
+    }
+    flatMapAcc(reverse(l), Nil)(f)
+  }
+
+  def filter3[A](l: List[A])(f: A => Boolean): List[A] =
+    flatMap2(l)((x) => if (f(x)) Cons(x, Nil) else Nil)
+
+  def zipAdd(a: List[Int], b: List[Int]): List[Int] = (a, b) match {
+    case (Nil, Nil) => Nil
+    case (Nil, l) => l
+    case (l, Nil) => l
+    case (Cons(ha, ta), Cons(hb, tb)) => Cons(ha+hb, zipAdd(ta, tb))
+  }
+
+  def zipWith[A](a: List[A], b: List[A])(f: (A, A) => A): List[A] = {
+    def zipWithAcc(a: List[A], b: List[A], r: List[A]): List[A] = (a, b) match {
+      case (Nil, Nil) => r
+//      case (Nil, l) => append(reverse(l), r)
+//      case (l, Nil) => append(reverse(l), r)
+      case (Nil, _) => throw new IndexOutOfBoundsException("List b is longer than list a")
+      case (_, Nil) => throw new IndexOutOfBoundsException("List a is longer than list b")
+      case (Cons(ah, at), Cons(bh, bt)) => zipWithAcc(at, bt, Cons(f(ah, bh), r))
+    }
+    reverse(zipWithAcc(a, b, Nil))
+  }
+
+
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = {
+    def startsWith[A](sup: List[A], sub: List[A]): Boolean = (sup, sub) match {
+      case (_, Nil) => true
+      case (Nil, _) => false
+      case (Cons(ha, ta), Cons(hb, tb)) => (ha == hb) && startsWith(ta, tb)
+    }
+    (sup, sub) match {
+      case (_, Nil) => true
+      case (Nil, _) => false
+      case (Cons(ha, ta), Cons(hb, tb)) => ((ha == hb) && startsWith(ta, tb)) || hasSubsequence(ta, sub)
+    }
+  }
 }
